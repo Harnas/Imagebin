@@ -1,0 +1,130 @@
+{% block content %}
+
+<form id="image_upload_form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div id="image_holder" class="image_holder" tabindex="-1">
+    </div>
+    <p><input id="file" type="file" name="file"></p>
+    <button type="submit">Upload</button>
+    <p><input type="text" id="your_name" name="your_name" placeholder="Enter your filename" size="35"></p>
+    <p>
+        <select name="expiration" class="selectpicker" data-title="Select" data-style="btn-default btn-block"
+                data-menu-style="dropdown-blue">
+            {% for x,y in form.fields.expiration.choices %}
+            <option value="{{ x }}">{{ y }}</option>
+            {% endfor %}
+        </select>
+    </p>
+
+    <ul id="tagList" name="tagList">
+    </ul>
+
+</form>
+
+{% load static %}
+<script type="text/javascript" src="{% static "/js/jquery-3.3.1.min.js" %}"></script>
+<script type="text/javascript">
+function getTags() {
+    var formData = new FormData();
+    var File = $('#file')[0];
+    formData.append("file", File.files[0]);
+
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": '{{csrf_token}}' }
+    });
+
+    $.ajax({
+        url: location.href + "classify",
+        type: 'POST',
+        data: formData,
+        processData: false,  // tell jQuery not to process the data
+        contentType: false,  // tell jQuery not to set contentType
+        success: function (data) {
+            var ul = document.getElementById("tagList");
+            ul.innerHTML = "";
+            for (var k in data.tags) {
+                addItem(data.tags[k]);
+            }
+        }
+    });
+}
+
+
+function addItem(val) {
+    var ul = document.getElementById("tagList");
+    var tag = document.getElementById("NewTag").value;
+
+    if (val != undefined) {
+        tag = val;
+    }
+
+    if (tag.length == 0) {
+        return 0;
+    }
+
+    var li = document.createElement("li");
+
+    var btn = document.createElement("BUTTON");
+    btn.appendChild(document.createTextNode("X"));
+    btn.setAttribute('class', "deleteMe");
+
+    li.setAttribute('id', "tag");
+    li.setAttribute('name', "tagList");
+    li.setAttribute('value', tag);
+    li.appendChild(document.createTextNode(tag));
+
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.setAttribute('name', "tagList");
+    input.setAttribute('value', tag);
+    li.appendChild(input);
+
+    li.appendChild(btn);
+    li.setAttribute('click', "delete_fnc");
+    ul.appendChild(li);
+
+    $(".deleteMe").on("click", function () {
+        $(this).closest("li").remove();
+    });
+}
+var myReader = new FileReader();
+
+$("#file").on('change', function () {
+    if (typeof (FileReader) != "undefined") {
+
+        var image_holder = $("#image_holder");
+        image_holder.empty();
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            $("<img />", {
+                "src": e.target.result,
+                "class": "thumb-image"
+            }).appendTo(image_holder);
+
+        }
+        image_holder.show();
+        reader.readAsDataURL($(this)[0].files[0]);
+    } else {
+        alert("This browser does not support FileReader.");
+    }
+});
+
+</script>
+<style>
+.thumb-image {
+    height: auto;
+    width: auto;
+    max-width: 300px;
+    max-height: 300px;
+
+.image-holder {
+    height: auto;
+    width: auto;
+</style>
+<input type="text" id="NewTag"/>
+<button onclick="addItem()">Add tag</button>
+<br/>
+<button onclick="getTags()">Check what AI is thinking</button>
+
+{% endblock %}
