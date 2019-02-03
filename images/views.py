@@ -13,6 +13,8 @@ from images.models import Tag
 import io
 import base64
 
+from PIL import Image as Image2
+
 AIEnable = True
 if AIEnable:
     from images import MLclassifer
